@@ -47,8 +47,16 @@ export default defineConfig({
           "sha256-7eCV4jtsr4t4knb3c4FCRPeu7GGZeOUGE3XvWix0XOQ=",
           // Head.astro: sets data-section and data-motif before first paint. Reviewed 2026-10-18.
           "sha256-6ZINGwbBwZAoVmAasCd7cTtRBKBuDMifxtzCpxtsf9c=",
-          "sha256-GkZBRnvSuhtx/cvzvukVkX2JJZW+DdPlVr7BX8Tefqo=",
-          "sha256-VWo5Wp4aqSj6nSgMpeAp9cKieaoIfwFUAunAVugI5gA=",
+          // Starlight 0.43.1 rewrote the theme scripts (#604); the two 0.42
+          // hashes they replace (GkZBRnvS..., VWo5Wp4a...) are removed, so the
+          // old bodies no longer run. Reviewed 2026-11-29 against the 0.43.1
+          // package: neither fetches, evals or writes HTML.
+          // components/ThemeProvider.astro: reads the `starlight-theme`
+          // localStorage key or prefers-color-scheme, sets <html data-theme>.
+          "sha256-CucRf0bf0xYD/oKdMuRRn1yhi9AJeUlkP4LSbkp47Ls=",
+          // components/ThemeSelect.astro (set:html body): reads the same key and
+          // sets each theme <select>'s value.
+          "sha256-yiTapURQAzVYqJIJXL03Gepg/022hHZUVvS4f8isCN8=",
           "sha256-f/zAUE74ucc3JYp4r4QQvkJofoQdkOIhHYK+jeZ6eko=",
           "sha256-wX2yOADeV+NMngflD5uYi3vl50SHC4sfM1EmylVjlX4=",
           // <Tabs syncKey>: restores the reader's chosen OS tab from
