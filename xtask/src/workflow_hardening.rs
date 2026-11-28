@@ -182,11 +182,24 @@ mod tests {
     #[test]
     fn site_pr_builds_the_site_without_publishing() {
         assert!(block(SITE_PR, "on:").contains("pull_request:"));
-        for step in ["npm ci --ignore-scripts", "persist-credentials: false", "npm test", "npm run build"] {
+        for step in [
+            "npm ci --ignore-scripts",
+            "persist-credentials: false",
+            "npm test",
+            "npm run build",
+        ] {
             assert!(SITE_PR.contains(step), "site-pr lost `{step}`");
         }
-        assert!(!SITE_PR.contains(": write"), "site-pr grants a write permission");
-        for publisher in ["deploy-pages", "upload-pages-artifact", "attest-build-provenance", "id-token"] {
+        assert!(
+            !SITE_PR.contains(": write"),
+            "site-pr grants a write permission"
+        );
+        for publisher in [
+            "deploy-pages",
+            "upload-pages-artifact",
+            "attest-build-provenance",
+            "id-token",
+        ] {
             assert!(!SITE_PR.contains(publisher), "site-pr names `{publisher}`");
         }
     }
