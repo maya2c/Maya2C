@@ -339,23 +339,63 @@ fn a_slow_gateway_hits_the_client_timeout() {
     assert!(matches!(client.health(), Err(Error::Timeout)));
 }
 
+/// A loopback port that nothing listens on and nothing else can take, for as
+/// long as the value lives.
+///
+/// Binding port 0 and dropping the listener frees the port, and a mock
+/// gateway in a parallel test can then be given the same one: the nightly
+/// coverage run of 2026-11-27 got `Ok(Health { status: "ok" })` from the
+/// unreachable-gateway test. The local port of a connected socket stays in
+/// use instead, so the OS gives it to no other bind, in this process or any
+/// other, and since nobody listens there a connect to it is refused. The
+/// listener only keeps that connection open; it never accepts it.
+struct RefusingPort {
+    port: u16,
+    _listener: TcpListener,
+    _holder: TcpStream,
+}
+
+impl RefusingPort {
+    fn new() -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let holder = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        let port = holder.local_addr().unwrap().port();
+        Self {
+            port,
+            _listener: listener,
+            _holder: holder,
+        }
+    }
+}
+
+#[test]
+fn a_refusing_port_cannot_be_bound_while_it_is_held() {
+    // The guarantee the test below rests on: nothing can listen on the port.
+    let closed = RefusingPort::new();
+    assert!(TcpListener::bind(("127.0.0.1", closed.port)).is_err());
+}
+
 #[test]
 fn an_unreachable_gateway_is_a_network_error() {
-    // The listener stays alive for the whole test. Dropping it released the
-    // port, and a parallel test's mock gateway could bind the same port and
-    // answer 200 (nightly 2026-11-27: "got Ok(Health { status: \"ok\" })").
-    // Held open, the kernel accepts the connect into the backlog but nothing
-    // ever answers, so the request times out: an unreachable gateway.
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    let client =
-        Client::with_timeout(&format!("http://127.0.0.1:{port}"), Duration::from_secs(2)).unwrap();
-    // Connect-timeout and refused are both "unreachable"; either is accepted.
+    let closed = RefusingPort::new();
+    let client = Client::with_timeout(
+        &format!("http://127.0.0.1:{}", closed.port),
+        Duration::from_secs(2),
+    )
+    .unwrap();
     let result = client.health();
-    assert!(
-        matches!(result, Err(Error::Network(_) | Error::Timeout)),
-        "got {result:?}"
-    );
+    // Linux and macOS refuse a closed loopback port at once. Windows retries
+    // the connect after the reset, and on this project's Windows host that
+    // outlasted the 2 s client timeout, so there a timeout is the same
+    // "unreachable". Port 1 is no substitute: on Windows it also times out.
+    if cfg!(windows) {
+        assert!(
+            matches!(result, Err(Error::Network(_) | Error::Timeout)),
+            "got {result:?}"
+        );
+    } else {
+        assert!(matches!(result, Err(Error::Network(_))), "got {result:?}");
+    }
 }
 
 #[test]

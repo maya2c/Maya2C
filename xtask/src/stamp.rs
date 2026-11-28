@@ -42,7 +42,6 @@ pub fn rfc3339_utc(t: OffsetDateTime) -> String {
 
 #[cfg(test)]
 mod tests {
-    // Test scope: unwrapping a fixed, known-good input is how a test fails loudly.
     #![allow(clippy::unwrap_used, clippy::expect_used)]
 
     use super::*;

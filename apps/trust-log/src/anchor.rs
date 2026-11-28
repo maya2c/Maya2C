@@ -153,7 +153,6 @@ fn payload_in(raw: &[u8], anchor: &Anchor) -> bool {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    // Test scope: unwrapping a fixed, known-good input is how a test fails loudly.
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use serde_json::json;
 
