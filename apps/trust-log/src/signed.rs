@@ -97,6 +97,7 @@ impl<T: Serialize> Signed<T> {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
     use zeroize::Zeroizing;
 

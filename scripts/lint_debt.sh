@@ -91,6 +91,14 @@ EOF
         if (( count > baseline )); then
             echo "lint_debt: FAIL — $count diagnostics, up from $baseline (+$((count - baseline)))" >&2
             echo "lint_debt: fix them, or run scripts/lint_debt.sh --update and justify the rise" >&2
+            # A bare count says nothing about where the rise is, and the full
+            # pass is too heavy to repeat on a laptop to find out. Print every
+            # diagnostic, counted per file, so the CI log is enough to act on.
+            warnings=$(grep -E ':[0-9]+:[0-9]+: warning:' <<<"$output" | sort -u)
+            echo "lint_debt: diagnostics per file:" >&2
+            cut -d: -f1 <<<"$warnings" | sort | uniq -c | sort -rn >&2
+            echo "lint_debt: every diagnostic:" >&2
+            printf '%s\n' "$warnings" >&2
             exit 1
         fi
         if (( count < baseline )); then

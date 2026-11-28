@@ -54,7 +54,13 @@ fn any_u128_amount() -> Amount {
 /// For 64-bit factors the product fits a `u128`, so it can be checked
 /// exactly against the compiler's own multiplication; `checked_mul` agrees.
 #[kani::proof]
-#[kani::unwind(5)]
+// Unwind bounds in this group: a loop of n iterations needs n + 1. `==` on a
+// `Wide` (`[u64; 8]`) is a memcmp that CBMC unrolls once per byte, 64 times,
+// so 65; the multiply's own loops run 4 times. At 5 the kani-heavy run of
+// 2026-11-27 failed on that memcmp's unwinding assertion alone (1 of 86
+// checks failed, 85 undetermined); at 65 all 85 checks succeed (kani-heavy
+// run 46149854355, 2026-11-28, 28 s).
+#[kani::unwind(65)]
 fn mul_wide_matches_u128_multiplication() {
     let x: u64 = kani::any();
     let y: u64 = kani::any();
@@ -68,7 +74,10 @@ fn mul_wide_matches_u128_multiplication() {
 /// here, so the upper partial products are not exercised; full-width
 /// products are property-tested (`tests/property_tests.rs`), not proved.
 #[kani::proof]
-#[kani::unwind(5)]
+// 65: the `==` is on two `Wide`s, as in mul_wide_matches_u128_multiplication.
+// The bound was not the only obstacle: at 5 the 2026-11-27 run reached the
+// 300-minute budget with no verdict.
+#[kani::unwind(65)]
 fn mul_wide_is_commutative() {
     let a = any_u128_amount();
     let b = any_u128_amount();
@@ -79,7 +88,12 @@ fn mul_wide_is_commutative() {
 /// 256-bit `a` and every non-zero divisor that fits in a `u64`; and every
 /// division satisfies `q·d + r = n`, `r < d`.
 #[kani::proof]
-#[kani::unwind(9)]
+// 33: no `Wide` is compared here. The widest `==` is on `Amount`s
+// (`[u64; 4]`, a 32-byte memcmp, inside the `Option`s); `div_rem_u64` runs 8
+// times and the multiply 4. At 9 the 2026-11-27 run logged "Not unwinding
+// loop memcmp.0 iteration 9" and then reached the 300-minute budget with no
+// verdict, so the bound was not the only obstacle.
+#[kani::unwind(33)]
 fn mul_then_div_round_trips() {
     let a = any_amount();
     let d: u64 = kani::any();

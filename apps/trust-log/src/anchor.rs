@@ -153,6 +153,7 @@ fn payload_in(raw: &[u8], anchor: &Anchor) -> bool {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use serde_json::json;
 
     use super::*;

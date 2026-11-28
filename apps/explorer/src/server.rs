@@ -711,6 +711,7 @@ pub async fn serve(address: SocketAddr, state: AppState) -> Result<ExplorerServe
 
 #[cfg(test)]
 mod parse_address_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::parse_address;
     use maya_address::Network;
 
